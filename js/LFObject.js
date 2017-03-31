@@ -1,17 +1,18 @@
 const LFCONST = {
 	BallRadius: 5,
-	Ground: {Width: 120, Height: 160}
+	Ground: {Width: 120, Height: 160},
+	Goal: {Width: 30, Height: 45}
 }
 
 var Goal = function() {
-	var geometry = new THREE.PlaneGeometry( 30, 45, 32 );
+	var geometry = new THREE.PlaneGeometry( LFCONST.Goal.Width, LFCONST.Goal.Height, 32 );
 	var material = new THREE.MeshBasicMaterial( {color: 0x999999} );
 	this.mesh =  new THREE.Mesh( geometry, material );
 	this.mesh.rotation.x = Math.PI * 0.5;
 }
 
 var Ball = function() {
-	var geometry = new THREE.SphereGeometry( 5, 32, 32 );
+	var geometry = new THREE.SphereGeometry( LFCONST.BallRadius, 32, 32 );
 	var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
 	this.mesh =  new THREE.Mesh( geometry, material );
 	this.mesh.position.x = 0;
@@ -43,10 +44,10 @@ var LFGame = function() {
 	this.meshGame.add(this.goals[1].mesh);
 
 	this.goals[0].mesh.position.x = 0;
-	this.goals[0].mesh.position.y = (LFCONST.Ground.Height - 45) / 2;
+	this.goals[0].mesh.position.y = (LFCONST.Ground.Height - LFCONST.Goal.Height) / 2;
 
-	this.goals[1].mesh.position.x = 180;
-	this.goals[1].mesh.position.y = (LFCONST.Ground.Height - 45) / 2;
+	this.goals[1].mesh.position.x = 10;
+	this.goals[1].mesh.position.y = (LFCONST.Ground.Height - LFCONST.Goal.Height) / 2;
 
 	this.defaultHeight = 100;
 }

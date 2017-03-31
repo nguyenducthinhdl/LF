@@ -10,6 +10,7 @@ var scene,
     controls;
 var HEIGHT, WIDTH,
     mousePos = { x: 0, y: 0 };
+var control;
 
 function createScene() {
 	HEIGHT = window.innerHeight;
@@ -43,6 +44,14 @@ function createScene() {
 
 	window.addEventListener('resize', handleWindowResize, false);
 
+	controls = new THREE.OrbitControls(camera, renderer.domElement);
+//	controls.addEventListener( 'change', renderer ); 
+	controls.enableZoom = true;
+
+	lfGame.gotoCamera(camera);
+	//controls.minPolarAngle = -Math.PI / 2;
+	//controls.maxPolarAngle = Math.PI
+
 	loop();
 }
 
@@ -55,7 +64,8 @@ function handleWindowResize() {
 }
 
 function loop() {
-	lfGame.gotoCamera(camera);
+	controls.update();
+	//lfGame.gotoCamera(camera);
 	renderer.render(scene, camera);
 	requestAnimationFrame(loop);
 }
