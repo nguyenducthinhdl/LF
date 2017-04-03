@@ -1,7 +1,7 @@
 const LFCONST = {
 	BallRadius: 5,
-	Ground: {Width: 120, Height: 160},
-	Goal: {Width: 30, Height: 45}
+	Ground: {Width: 240, Height: 320},
+	Goal: {Width: 60, Height: 30}
 }
 
 var Goal = function() {
@@ -13,11 +13,58 @@ var Goal = function() {
 
 var Ball = function() {
 	var geometry = new THREE.SphereGeometry( LFCONST.BallRadius, 32, 32 );
-	var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+
+	/* Load ball texture */
+	var texture = new THREE.TextureLoader().load( "assets/ball1.jpg" );
+	texture.wrapS = THREE.RepeatWrapping;
+	texture.wrapT = THREE.RepeatWrapping;
+	texture.repeat.set( 1, 1 );
+
+	/* Create material based on texture */
+	var material = new THREE.MeshBasicMaterial( {map: texture, color: 0xaaaaaa} );
+
 	this.mesh =  new THREE.Mesh( geometry, material );
 	this.mesh.position.x = 0;
 	this.mesh.position.y = 0;
-	this.mesh.position.z = LFCONST.BallRadius;
+	this.mesh.position.z = LFCONST.BallRadius + 20;
+
+	/* The physical body */
+	var sphereShape = new CANNON.Sphere(LFCONST.BallRadius); // Step 1
+	var sphereBody = new CANNON.Body({mass: 0.2, shape: sphereShape}); // Step 2
+	sphereBody.position.set(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z);
+	this.body = sphereBody;
+	world.add(sphereBody); // Step 3
+
+	/* Add the init velocity */
+	this.body.velocity.set(0, 5, 5);
+
+	/* The trajectory movement */
+		
+}
+
+Ball.prototype.translate = function(x, y, z) {
+	this.mesh.position.x += x;
+	this.mesh.position.y += y;
+	this.mesh.position.z += z;
+	this.body.position.set(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z);
+}
+
+Ball.prototype.updateBody = function() {
+	var deltaX = this.body.position.x - this.mesh.position.x;
+	var deltaY = this.body.position.y - this.mesh.position.y;
+	var deltaZ = this.body.position.z - this.mesh.position.z;
+
+	this.mesh.position.x = this.body.position.x;
+	this.mesh.position.y = this.body.position.y;
+	this.mesh.position.z = this.body.position.z;
+
+	this.mesh.rotation.x += -(deltaY + deltaZ) * 0.05 * Math.PI;
+	this.mesh.rotation.y += -(deltaX + deltaZ) * 0.05 * Math.PI;
+	this.mesh.rotation.z += -(deltaX + deltaY) * 0.05 * Math.PI;
+
+//	console.log(this.body.position);
+	console.log(this.body.velocity);
+//	this.body.position.copy( this.mesh.position );
 }
 
 var Ground = function() {
@@ -27,6 +74,14 @@ var Ground = function() {
 	this.mesh.position.x = 0;
 	this.mesh.position.y = 0;
 	this.mesh.position.z = 0;
+
+//	this.mesh.useQuaternion = true;
+//	this.mesh.quaternion.setFromAxisAngle( new THREE.Vector3( 0, 0, 1 ), 0 );
+
+//	var shape = new CANNON.Box(new CANNON.Vec3( 0, 0, 1));
+//	body = new CANNON.Body( {mass: 0, shape: shape} );
+//	body.quaternion.set( this.mesh.quaternion.x, this.mesh.quaternion.y, this.mesh.quaternion.z, this.mesh.quaternion.w );
+	//world.add( body );
 
 //	this.mess.rotation.x += Math.PI*
 }
@@ -44,12 +99,16 @@ var LFGame = function() {
 	this.meshGame.add(this.goals[1].mesh);
 
 	this.goals[0].mesh.position.x = 0;
-	this.goals[0].mesh.position.y = (LFCONST.Ground.Height - LFCONST.Goal.Height) / 2;
+	this.goals[0].mesh.position.y = LFCONST.Ground.Height / 2;
+	this.goals[0].mesh.position.z = LFCONST.Goal.Height / 2;
 
-	this.goals[1].mesh.position.x = 10;
-	this.goals[1].mesh.position.y = (LFCONST.Ground.Height - LFCONST.Goal.Height) / 2;
+	this.goals[1].mesh.position.x = 0;
+	this.goals[1].mesh.position.y = -LFCONST.Ground.Height / 2;
+	this.goals[1].mesh.position.z = LFCONST.Goal.Height / 2;
 
 	this.defaultHeight = 100;
+
+	this.lastTime = (new Date()).getTime();	
 }
 
 LFGame.prototype.gotoScene = function(scene) {
@@ -57,9 +116,28 @@ LFGame.prototype.gotoScene = function(scene) {
 }
 
 LFGame.prototype.gotoCamera = function(camera) {
-	camera.position.x = this.ball.mesh.position.x + 50;
-	camera.position.y = this.ball.mesh.position.y - 50;
-	camera.position.z = 200;
+	camera.position.x = this.ball.mesh.position.x - 10;
+	camera.position.y = this.ball.mesh.position.y - 150;
+	camera.position.z = 50;
 //	camera.lookAt(new THREE.Vector3(this.ball.mesh.position.x, this.ball.mesh.position.y, this.ball.mesh.position.z));
 	camera.lookAt(this.ball.mesh.position);
+}
+
+LFGame.prototype.updateWorld = function() {
+	var now = (new Date()).getTime();
+	var delta = 1 / 60.0;
+	if (this.lastTime) {
+		delta = (now - this.lastTime) / 1000;
+	}
+	
+	console.log(delta);
+
+	if (delta > 0.01) {
+		this.lastTime = now;
+		/* Update the physical world */
+		world.step( delta * 1 );
+
+		/* Update the physical world to graphic object */
+		this.ball.updateBody();
+	}
 }

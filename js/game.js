@@ -11,8 +11,35 @@ var scene,
 var HEIGHT, WIDTH,
     mousePos = { x: 0, y: 0 };
 var control;
+var world;
 
 function createScene() {
+
+	/* The physic world */
+	world = new CANNON.World();
+	world.gravity.set(0,0,-9.82);
+	world.broadphase = new CANNON.NaiveBroadphase();
+	//world.solver.iterations = 10;	
+
+        // Materials
+        var groundMaterial = new CANNON.Material("groundMaterial");
+        // Adjust constraint equation parameters for ground/ground contact
+        var ground_ground_cm = new CANNON.ContactMaterial(groundMaterial, groundMaterial, {
+            friction: 0.4,
+            restitution: 0.3,
+            contactEquationStiffness: 1e8,
+            contactEquationRelaxation: 3,
+            frictionEquationStiffness: 1e8,
+            frictionEquationRegularizationTime: 3,
+        });
+        // Add contact material to the world
+        world.addContactMaterial(ground_ground_cm);
+
+	var groundShape = new CANNON.Plane();
+	var groundBody = new CANNON.Body({ mass: 0, shape: groundShape, material: groundMaterial });
+	groundBody.position.set(0, 0, 0);
+	world.add(groundBody);
+
 	HEIGHT = window.innerHeight;
 	WIDTH = window.innerWidth;
 
@@ -66,6 +93,7 @@ function handleWindowResize() {
 function loop() {
 	controls.update();
 	//lfGame.gotoCamera(camera);
+	lfGame.updateWorld();
 	renderer.render(scene, camera);
 	requestAnimationFrame(loop);
 }
