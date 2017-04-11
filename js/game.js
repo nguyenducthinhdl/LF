@@ -12,11 +12,16 @@ var HEIGHT, WIDTH,
     mousePos = { x: 0, y: 0 };
 var control;
 var world;
+var light;
+var physics_stats;
 
 function createScene() {
 
+	Physijs.scripts.worker = '/LF/LF/physijs_worker.js';
+	Physijs.scripts.ammo = '/LF/LF/ammo.js';
+
+	TWEEN.start();
 	/* The physic world */
-	
 
 
 	HEIGHT = window.innerHeight;
@@ -24,14 +29,14 @@ function createScene() {
 
 	lfGame = new LFGame();
 
-	scene = new Physijs.Scene;
-		scene.setGravity(new THREE.Vector3( 0, -30, 0 ));
+	scene = new Physijs.Scene({ fixedTimeStep: 1 / 120 });
+		scene.setGravity(new THREE.Vector3( 0, 0, -9.82 ));
 		scene.addEventListener(
 			'update',
 			function() {
-				applyForce();
+				//applyForce();
 				scene.simulate( undefined, 1 );
-				//physics_stats.update();
+				physics_stats.update();
 			}
 		);
 		
@@ -50,13 +55,37 @@ function createScene() {
 	camera.position.x = 0;
 	camera.position.z = 200;
 	camera.position.y = 0;
-  
+
+	// Light
+	light = new THREE.DirectionalLight( 0xFFFFFF );
+	light.position.set( 20, 40, 15 );
+	light.target.position.copy( scene.position );
+	light.castShadow = true;
+	light.shadow.camera.left = -60;
+	light.shadow.camera.top = -60;
+	light.shadow.camera.right = 60;
+	light.shadow.camera.bottom = 60;
+	light.shadow.camera.near = 20;
+	light.shadow.camera.far = 200;
+	light.shadow.bias = -.0001
+	light.shadow.mapSize.height = light.shadow.mapSize.width = 2048;
+	light.lookAt(0, 0, 0);
+	//light.shadowDarkness = .7;
+	scene.add( light );
+	scene.simulate();
+
 	renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 	renderer.setSize(WIDTH, HEIGHT);
 	renderer.shadowMap.enabled = true;
 
 	container = document.getElementById('stadium');
 	container.appendChild(renderer.domElement);
+
+	physics_stats = new Stats();
+	physics_stats.domElement.style.position = 'absolute';
+	physics_stats.domElement.style.top = '50px';
+	physics_stats.domElement.style.zIndex = 100;
+	container.appendChild( physics_stats.domElement );
 
 	window.addEventListener('resize', handleWindowResize, false);
 
@@ -82,8 +111,11 @@ function handleWindowResize() {
 function loop() {
 	controls.update();
 	//lfGame.gotoCamera(camera);
+	lfGame.gotoCamera(camera);
 	lfGame.updateWorld();
 	renderer.render(scene, camera);
+	physics_stats.update();
+	scene.simulate(undefined, 1);
 	requestAnimationFrame(loop);
 }
 
@@ -92,7 +124,7 @@ function init(event){
   resetGame();
   createScene();
 
-  loop();
+  //loop();
 }
 
 
