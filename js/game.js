@@ -15,10 +15,17 @@ var world;
 var light;
 var physics_stats;
 
+var nodeJS = true;
 function createScene() {
-
-	Physijs.scripts.worker = '/LF/LF/physijs_worker.js';
-	Physijs.scripts.ammo = '/LF/LF/ammo.js';
+	/* NodeJS server */
+	if (!nodeJS) {
+		Physijs.scripts.worker = '/LF/LF/physijs_worker.js';
+		Physijs.scripts.ammo = '/LF/LF/ammo.js';
+	}
+	else {
+		Physijs.scripts.worker = 'physijs_worker.js';
+		Physijs.scripts.ammo = 'ammo.js';
+	}
 
 	TWEEN.start();
 	/* The physic world */
